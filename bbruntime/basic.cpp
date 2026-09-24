@@ -434,7 +434,8 @@ BBObj *_bbObjFromHandle( int handle,BBObjType *type ){
 	map<int,BBObj*>::const_iterator it=handle_map.find( handle );
 	if( it==handle_map.end() ) return 0;
 	BBObj *obj=it->second;
-	return obj->type==type ? obj : 0;
+	//return obj->type==type ? obj : 0;
+	return obj; // permissive: perform no type check
 }
 
 void _bbNullObjEx(){
