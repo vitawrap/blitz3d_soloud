@@ -48,12 +48,18 @@ struct ArrayType : public Type{
 
 struct StructType : public Type{
 	string ident;
+	StructType* base;
 	DeclSeq *fields;
-	StructType( const string &i ):ident(i),fields(0){}
-	StructType( const string &i,DeclSeq *f ):ident(i),fields( f ){}
+	StructType( const string &i ):ident(i),fields(0),base(0){}
+	StructType( const string &i,DeclSeq *f ):ident(i),fields( f ),base(0){}
+	StructType( const string &i,DeclSeq *f,StructType* b ):ident(i),fields( f ),base(b){}
 	~StructType(){ delete fields; }
 	StructType *structType(){ return this; }
 	virtual bool canCastTo( Type *t );
+	int countFields() const;
+	Decl* findField(const string& ident);
+	void getStructTypeChain(list<StructType*>&);
+	bool isTypeInChain(Type* type) const;
 };
 
 struct ConstType : public Type{

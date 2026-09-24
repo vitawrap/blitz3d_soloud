@@ -36,7 +36,34 @@ static struct s_type : public Type{
 }s;
 
 bool StructType::canCastTo( Type *t ){
-	return t==this || t==Type::null_type || (this==Type::null_type && t->structType());
+	return /*t==this ||*/ isTypeInChain(t) || t==Type::null_type || (this==Type::null_type && t->structType());
+}
+
+int StructType::countFields() const {
+	int count = fields->size();
+	for (auto* walk = base; walk; walk = walk->base)
+		count += walk->fields->size();
+	return count;
+}
+
+void StructType::getStructTypeChain(list<StructType*>& out) {
+	for (auto* walk = this; walk; walk = walk->base)
+		out.push_front(walk);
+}
+
+Decl* StructType::findField(const string& ident) {
+	Decl* ret = 0;
+	for (auto* walk = this; walk; walk = walk->base) {
+		if ((ret = walk->fields->findDecl( ident ))) break;
+	}
+	return ret;
+}
+
+bool StructType::isTypeInChain(Type* type) const {
+	for (auto* walk = this; walk; walk = walk->base) {
+		if (walk == type) return true;
+	}
+	return false;
 }
 
 bool VectorType::canCastTo( Type *t ){

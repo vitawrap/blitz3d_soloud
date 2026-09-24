@@ -153,22 +153,69 @@ void FuncDeclNode::translate( Codegen *g ){
 //////////////////////
 // Type Declaration //
 //////////////////////
+static map<string, StructDeclNode*> _knownDecls;
+
+void StructDeclNode::registerDeclNode(StructDeclNode *n) {
+	if (_knownDecls.find(n->ident) == _knownDecls.end()) {
+		_knownDecls[n->ident] = n;
+	}
+}
+
+void StructDeclNode::resetDeclNodes() {
+	_knownDecls.clear();
+}
+
+StructDeclNode* StructDeclNode::findDeclNode(string const& ident) {
+	auto itr = _knownDecls.find(ident);
+	return itr == _knownDecls.end() ? 0 : itr->second;
+}
+
+void StructDeclNode::getDeclTypeChainNodes(string const& ident, list<StructDeclNode*>& nodes) {
+	for (auto* walk = findDeclNode(ident); walk; walk = findDeclNode(walk->base))
+		nodes.push_front(walk);
+}
+
 void StructDeclNode::proto( DeclSeq *d,Environ *e ){
-	sem_type=d_new StructType( ident,d_new DeclSeq() );
+	StructType* bstruct = 0;
+	if (base != "") {
+		auto* btype = d->findDecl(base);
+		if (!btype) ex("Base type does not exist");
+		if (btype->kind != DECL_STRUCT) ex("Base type must be a NewType");
+		bstruct = btype->type->structType();
+	}
+	sem_type=d_new StructType( ident,d_new DeclSeq(),bstruct );
 	if( !d->insertDecl( ident,sem_type,DECL_STRUCT ) ){
 		delete sem_type;ex( "Duplicate identifier" );
 	}
 	e->types.push_back( sem_type );
+	//registerDeclNode(this);
 }
 
 void StructDeclNode::semant( Environ *e ){
+	// proto is called for this type first to get sem_type.
+	int base_offset = 0;
+	for (auto* walk = sem_type->base; walk; walk = walk->base) {
+		for( int k=0;k<walk->fields->size();++k ) base_offset += 4;
+	}
+
+	// apply semant on all fields
+	//list<StructDeclNode*> nodes;
+	//getDeclTypeChainNodes(ident, nodes);
+	//for (auto* node : nodes)
+	//	node->fields->proto( sem_type->fields,e );
 	fields->proto( sem_type->fields,e );
-	for( int k=0;k<sem_type->fields->size();++k ) sem_type->fields->decls[k]->offset=k*4;
+
+	for( int k=0;k<sem_type->fields->size();++k ) {
+		sem_type->fields->decls[k]->offset = base_offset + (k*4); // every datatype in bb can be stored in 4 bytes
+	}
 }
 
 void StructDeclNode::translate( Codegen *g ){
-
 	//translate fields
+	//list<StructDeclNode*> nodes;
+	//getDeclTypeChainNodes(ident, nodes);
+	//for (auto* node : nodes)
+	//	node->fields->translate( g );
 	fields->translate( g );
 
 	//type ID
@@ -187,19 +234,23 @@ void StructDeclNode::translate( Codegen *g ){
 	}
 
 	//number of fields
-	g->i_data( sem_type->fields->size() );
+	g->i_data( sem_type->countFields() );
 
 	//type of each field
-	for( k=0;k<sem_type->fields->size();++k ){
-		Decl *field=sem_type->fields->decls[k];
-		Type *type=field->type;
-		string t;
-		if( type==Type::int_type ) t="__bbIntType";
-		else if( type==Type::float_type ) t="__bbFltType";
-		else if( type==Type::string_type ) t="__bbStrType";
-		else if( StructType *s=type->structType() ) t="_t"+s->ident;
-		else if( VectorType *v=type->vectorType() ) t=v->label;
-		g->p_data( t );
+	list<StructType*> sem_types;
+	sem_type->getStructTypeChain(sem_types); // includes itself
+	for ( auto* chain_type : sem_types ) {
+		for( k=0;k<chain_type->fields->size();++k ){
+			Decl *field=chain_type->fields->decls[k];
+			Type *type=field->type;
+			string t;
+			if( type==Type::int_type ) t="__bbIntType";
+			else if( type==Type::float_type ) t="__bbFltType";
+			else if( type==Type::string_type ) t="__bbStrType";
+			else if( StructType *s=type->structType() ) t="_t"+s->ident;
+			else if( VectorType *v=type->vectorType() ) t=v->label;
+			g->p_data( t );
+		}
 	}
 
 }

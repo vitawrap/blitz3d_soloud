@@ -22,6 +22,8 @@ Environ *ProgNode::semant( Environ *e ){
 	datas->proto( env->decls,env );
 	datas->semant( env );
 
+	StructDeclNode::resetDeclNodes();
+
 	sem_env=env.release();
 	return sem_env;
 }

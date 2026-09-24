@@ -106,7 +106,7 @@ void FieldVarNode::semant( Environ *e ){
 	expr=expr->semant( e );
 	StructType *s=expr->sem_type->structType();
 	if( !s ) ex( "Variable must be a Type" );
-	sem_field=s->fields->findDecl( ident );
+	sem_field=s->findField(ident);
 	if( !sem_field ) ex( "Type field not found" );
 	sem_type=sem_field->type;
 }

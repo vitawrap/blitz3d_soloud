@@ -528,6 +528,11 @@ DeclNode *Parser::parseFuncDecl(){
 DeclNode *Parser::parseStructDecl(){
 	int pos=toker->pos();
 	string ident=parseIdent();
+	string base;
+	if ( toker->curr()==EXTENDS ){
+		toker->next();
+		base=parseIdent();
+	}
 	while( toker->curr()=='\n' ) toker->next();
 	a_ptr<DeclSeqNode> fields( d_new DeclSeqNode() );
 	while( toker->curr()==FIELD ){
@@ -539,7 +544,7 @@ DeclNode *Parser::parseStructDecl(){
 	}
 	if( toker->curr()!=ENDTYPE ) exp( "'Field' or 'End Type'" );
 	toker->next();
-	DeclNode *d=d_new StructDeclNode( ident,fields.release() );
+	DeclNode *d=d_new StructDeclNode( ident,fields.release(),base );
 	d->pos=pos;d->file=incfile;
 	return d;
 }

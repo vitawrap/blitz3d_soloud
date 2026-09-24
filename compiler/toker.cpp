@@ -33,6 +33,7 @@ static void makeKeywords() {
 	alphaTokes["Function"] = FUNCTION;
 	alphaTokes["End Function"] = ENDFUNCTION;
 	alphaTokes["Type"] = TYPE;
+	alphaTokes["Extends"] = EXTENDS;
 	alphaTokes["End Type"] = ENDTYPE;
 	alphaTokes["Each"] = EACH;
 	alphaTokes["Local"] = LOCAL;
