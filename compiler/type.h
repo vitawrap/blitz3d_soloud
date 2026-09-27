@@ -34,8 +34,8 @@ struct Type{
 struct FuncType : public Type{
 	Type *returnType;
 	DeclSeq *params;
-	bool userlib,cfunc;
-	FuncType( Type *t,DeclSeq *p,bool ulib,bool cfn ):returnType(t),params(p),userlib(ulib),cfunc(cfn){}
+	bool userlib,cfunc,vfunc;
+	FuncType( Type *t,DeclSeq *p,bool ulib,bool cfn,bool vfn = false ):returnType(t),params(p),userlib(ulib),cfunc(cfn),vfunc(vfn){}
 	~FuncType(){ delete params; }
 	FuncType *funcType(){ return this; }
 };
@@ -50,14 +50,17 @@ struct StructType : public Type{
 	string ident;
 	StructType* base;
 	DeclSeq *fields;
-	StructType( const string &i ):ident(i),fields(0),base(0){}
-	StructType( const string &i,DeclSeq *f ):ident(i),fields( f ),base(0){}
-	StructType( const string &i,DeclSeq *f,StructType* b ):ident(i),fields( f ),base(b){}
-	~StructType(){ delete fields; }
+	DeclSeq *virtuals;
+	StructType( const string &i ):ident(i),fields(0),virtuals(0),base(0){}
+	StructType( const string &i,DeclSeq *f ):ident(i),fields( f ),virtuals(0),base(0){}
+	StructType( const string &i,DeclSeq *f,StructType* b ):ident(i),fields( f ),virtuals(0),base(b){}
+	~StructType() { delete fields; delete virtuals; }
 	StructType *structType(){ return this; }
 	virtual bool canCastTo( Type *t );
 	int countFields() const;
+	int countVirtuals() const;
 	Decl* findField(const string& ident);
+	Decl* findVirtual(const string& ident);
 	void getStructTypeChain(list<StructType*>&);
 	bool isTypeInChain(Type* type) const;
 };

@@ -8,6 +8,7 @@ struct DeclNode : public Node{
 	DeclNode():pos(-1){}
 	virtual void proto( DeclSeq *d,Environ *e ){}
 	virtual void semant( Environ *e ){}
+	virtual void buildvirt( Environ *e ){}
 	virtual void translate( Codegen *g ){}
 	virtual void transdata( Codegen *g ){}
 };
@@ -18,6 +19,7 @@ struct DeclSeqNode : public Node{
 	~DeclSeqNode(){ for(;decls.size();decls.pop_back())delete decls.back(); }
 	void proto( DeclSeq *d,Environ *e );
 	void semant( Environ *e );
+	void buildvirt( Environ *e );
 	void translate( Codegen *g );
 	void transdata( Codegen *g );
 	void push_back( DeclNode *d ){ decls.push_back( d ); }
@@ -42,12 +44,14 @@ struct VarDeclNode : public DeclNode{
 };
 
 struct FuncDeclNode : public DeclNode{
+	bool virtual_first_arg;
 	string ident,tag;
 	DeclSeqNode *params;
 	StmtSeqNode *stmts;
 	FuncType *sem_type;
 	Environ *sem_env;
-	FuncDeclNode( const string &i,const string &t,DeclSeqNode *p,StmtSeqNode *ss ):ident(i),tag(t),params(p),stmts(ss){}
+	FuncDeclNode( const string &i,const string &t,DeclSeqNode *p,StmtSeqNode *ss, bool vfa = false ):
+		ident(i),tag(t),params(p),stmts(ss),virtual_first_arg(vfa){}
 	~FuncDeclNode(){ delete params;delete stmts; }
 	void proto( DeclSeq *d,Environ *e );
 	void semant( Environ *e );
@@ -63,6 +67,7 @@ struct StructDeclNode : public DeclNode{
 	~StructDeclNode(){ delete fields; }
 	void proto( DeclSeq *d,Environ *e );
 	void semant( Environ *e );
+	void buildvirt( Environ *e );
 	void translate( Codegen *g );
 
 	static void resetDeclNodes();

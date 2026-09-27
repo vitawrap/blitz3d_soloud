@@ -162,8 +162,17 @@ TNode *CallNode::translate( Codegen *g ){
 	FuncType *f=sem_decl->type->funcType();
 
 	TNode *t;
-	TNode *l=global( "_f"+ident );
-	TNode *r=exprs->translate( g,f->cfunc );
+	TNode *l=0;
+	if (f->vfunc) {
+		Decl* struct_arg = f->params->decls[0];
+		StructType* struct_type = struct_arg->type->structType();
+		Decl* virtual_decl = struct_type->findVirtual(ident);
+		// expr 0 (the struct obj) has to be translated once for the virt sym then again for call exprs
+		l = call( "__bbObjResolveVirtualSym", exprs->exprs[0]->translate(g), iconst(virtual_decl->offset));
+	} else {
+		l = global("_f" + ident);
+	}
+	TNode* r = exprs->translate(g, f->cfunc);
 
 	if( f->userlib ){
 		l=d_new TNode( IR_MEM,l );

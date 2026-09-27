@@ -2,6 +2,8 @@
 #include "std.h"
 #include "nodes.h"
 
+static char const* VIRT_LSEP = "_T_";
+
 //////////////////////////////
 // Sequence of declarations //
 //////////////////////////////
@@ -19,6 +21,17 @@ void DeclSeqNode::proto( DeclSeq *d,Environ *e ){
 void DeclSeqNode::semant( Environ *e ){
 	for( int k=0;k<decls.size();++k ){
 		try{ decls[k]->semant( e ); }
+		catch( Ex &x ){ 
+			if( x.pos<0 ) x.pos=decls[k]->pos;
+			if(!x.file.size() ) x.file=decls[k]->file;
+			throw; 
+		}
+	}
+}
+
+void DeclSeqNode::buildvirt( Environ *e ){
+	for( int k=0;k<decls.size();++k ){
+		try{ decls[k]->buildvirt( e ); }
 		catch( Ex &x ){ 
 			if( x.pos<0 ) x.pos=decls[k]->pos;
 			if(!x.file.size() ) x.file=decls[k]->file;
@@ -98,11 +111,32 @@ void FuncDeclNode::proto( DeclSeq *d,Environ *e ){
 	Type *t=tagType( tag,e );if( !t ) t=Type::int_type;
 	a_ptr<DeclSeq> decls( d_new DeclSeq() );
 	params->proto( decls,e );
-	sem_type=d_new FuncType( t,decls.release(),false,false );
-	if( !d->insertDecl( ident,sem_type,DECL_FUNC ) ){
-		delete sem_type;ex( "duplicate identifier" );
+	sem_type=d_new FuncType( t,decls.release(),false,false,virtual_first_arg );
+	// register a different name for the compiler if virtual.
+	if( !d->insertDecl( virtual_first_arg?
+		ident+VIRT_LSEP+sem_type->params->decls[0]->type->structType()->ident : ident, sem_type, DECL_FUNC)) {
+		delete sem_type; ex( "duplicate identifier" );
 	}
 	e->types.push_back( sem_type );
+
+	if (virtual_first_arg) {
+		// also if we're a virtual, claim the symbol name at compile time
+		Decl* func = d->findDecl(ident);
+		if (func && func->type->funcType() && !func->type->funcType()->vfunc)
+			ex("a method may not use the same name as a function");
+
+		d->insertDecl(ident, sem_type, DECL_FUNC);
+
+		// register virtual method in struct arg
+		Decl* virt_decl = sem_type->params->decls[0];
+		if (virt_decl && virt_decl->type->structType()) {
+			StructType* sem_this = virt_decl->type->structType();
+			if (!sem_this->virtuals)
+				sem_this->virtuals = new DeclSeq;
+			if (!sem_this->virtuals->insertDecl(ident, sem_type, DECL_FUNC))
+				ex("duplicate type method");
+		}
+	}
 }
 
 void FuncDeclNode::semant( Environ *e ){
@@ -125,6 +159,12 @@ void FuncDeclNode::translate( Codegen *g ){
 	int size=enumVars( sem_env );
 
 	//enter function
+	if (virtual_first_arg) {
+		Decl* virt_decl = sem_type->params->decls[0];
+		if (virt_decl && virt_decl->type->structType()) {
+			ident += VIRT_LSEP + virt_decl->type->structType()->ident;
+		}
+	}
 	g->enter( "_f"+ident,size );
 
 	//initialize locals
@@ -195,7 +235,7 @@ void StructDeclNode::semant( Environ *e ){
 	// proto is called for this type first to get sem_type.
 	int base_offset = 0;
 	for (auto* walk = sem_type->base; walk; walk = walk->base) {
-		for( int k=0;k<walk->fields->size();++k ) base_offset += 4;
+		base_offset += walk->fields->size() * 4;
 	}
 
 	// apply semant on all fields
@@ -210,6 +250,55 @@ void StructDeclNode::semant( Environ *e ){
 	}
 }
 
+static const string INHERIT_TAG = "INHERITED";
+
+// this runs after all structs are known and all funcs have run proto
+// structs should also be linked in extend order
+void StructDeclNode::buildvirt( Environ *e ){
+	
+	StructType* sem_base = sem_type->base;
+
+	if (sem_base && sem_base->virtuals) {
+		// register all inherited virtuals alongside new or overridden ones
+		for (int k=0;k<sem_base->virtuals->size();++k) {
+			Decl* base_virt = sem_base->virtuals->decls[k];
+			string test_ident = strstr(base_virt->name.c_str(), INHERIT_TAG.c_str())?
+				base_virt->name.substr(0,base_virt->name.length() - INHERIT_TAG.length()) : base_virt->name;
+			if (!sem_type->virtuals)
+				sem_type->virtuals = new DeclSeq();
+			Decl* proto_virt = sem_type->virtuals->findDecl(test_ident);
+			if (!proto_virt)
+				sem_type->virtuals->insertDecl(test_ident+INHERIT_TAG, base_virt->type, base_virt->kind);
+			else {
+				// if the new/override decl exists, reinsert it at the end to keep order of offsets...
+				sem_type->virtuals->removeDecl(proto_virt);
+				sem_type->virtuals->insertDecl(proto_virt);
+			}
+		}
+
+		// and calculate vtable offsets
+		int base_virts = sem_base->virtuals->size() * 4; // only increment when not inherited or overridden
+		for (int k=0; sem_type->virtuals && k < sem_type->virtuals->size();++k) {
+			Decl* virt = sem_type->virtuals->decls[k];
+			string test_ident = strstr(virt->name.c_str(), INHERIT_TAG.c_str())?
+				virt->name.substr(0,virt->name.length() - INHERIT_TAG.length()) : virt->name;
+			// point to known offset if override or inherited, add to list if this is a new virtual
+			Decl* over_virt = sem_base->virtuals->findDecl(test_ident);
+			if (!over_virt) // parent may have no impl
+				over_virt = sem_base->virtuals->findDecl(test_ident+INHERIT_TAG);
+			if (over_virt) {
+				virt->offset= over_virt->offset; continue;
+			}
+			virt->offset= base_virts + (k * 4);
+		}
+	} else {
+		// no parent class so we're free to just generate a root table
+		for (int k=0; sem_type->virtuals && k < sem_type->virtuals->size();++k) {
+			sem_type->virtuals->decls[k]->offset= k * 4;
+		}
+	}
+}
+
 void StructDeclNode::translate( Codegen *g ){
 	//translate fields
 	//list<StructDeclNode*> nodes;
@@ -218,12 +307,29 @@ void StructDeclNode::translate( Codegen *g ){
 	//	node->fields->translate( g );
 	fields->translate( g );
 
+	int k;
+	list<StructType*> sem_types;
+
+	//vtable (sem_type is completed in translate)
+	string vtlabel = "_v_t" + ident;
+	g->align_data( 4 );
+	g->i_data(sem_type->countVirtuals(), vtlabel); // number of virtual members (new/overriden/inherited)
+	for ( k=0;sem_type->virtuals && k < sem_type->virtuals->size();++k ){
+		StructType* vftype = sem_type;
+		Decl* virt = vftype->virtuals->decls[k];
+		while (strstr(virt->name.c_str(), INHERIT_TAG.c_str())) {
+			vftype = vftype->base;
+			virt = vftype->virtuals->decls[k];
+		}
+		g->p_data("_f"+virt->name+VIRT_LSEP+vftype->ident);
+	}
+
 	//type ID
 	g->align_data( 4 );
-	g->i_data( 5,"_t"+ident );
+	g->i_data( 5,"_t"+ident ); // BBType header
+	g->p_data( "_v_t"+ident ); // BBObjType vtable ptr
 
 	//used and free lists for type
-	int k;
 	for( k=0;k<2;++k ){
 		string lab=genLabel();
 		g->i_data( 0,lab );	//fields
@@ -237,7 +343,6 @@ void StructDeclNode::translate( Codegen *g ){
 	g->i_data( sem_type->countFields() );
 
 	//type of each field
-	list<StructType*> sem_types;
 	sem_type->getStructTypeChain(sem_types); // includes itself
 	for ( auto* chain_type : sem_types ) {
 		for( k=0;k<chain_type->fields->size();++k ){

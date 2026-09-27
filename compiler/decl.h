@@ -27,6 +27,8 @@ struct DeclSeq{
 	~DeclSeq();
 	Decl *findDecl( const string &s );
 	Decl *insertDecl( const string &s,Type *t,int kind,ConstType *d=0 );
+	bool insertDecl(Decl* d);
+	void removeDecl(Decl* d);
 	int size(){ return decls.size(); }
 };
 

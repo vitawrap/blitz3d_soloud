@@ -46,6 +46,11 @@ int StructType::countFields() const {
 	return count;
 }
 
+int StructType::countVirtuals() const {
+	// this also counts inherited virtuals
+	return virtuals ? virtuals->size() : 0;
+}
+
 void StructType::getStructTypeChain(list<StructType*>& out) {
 	out.clear();
 	for (auto* walk = this; walk; walk = walk->base)
@@ -57,6 +62,15 @@ Decl* StructType::findField(const string& ident) {
 	for (auto* walk = this; walk; walk = walk->base) {
 		if ((ret = walk->fields->findDecl( ident ))) break;
 	}
+	return ret;
+}
+
+static const string INHERIT_TAG = "INHERITED";
+
+Decl* StructType::findVirtual(const string& ident) {
+	if (!virtuals) return 0;
+	Decl* ret = virtuals->findDecl(ident);
+	if (!ret) ret = virtuals->findDecl(ident+INHERIT_TAG);
 	return ret;
 }
 

@@ -507,9 +507,21 @@ DeclNode *Parser::parseFuncDecl(){
 	string tag=parseTypeTag();
 	if( toker->curr()!='(' ) exp( "'('" );
 	a_ptr<DeclSeqNode> params( d_new DeclSeqNode() );
+	int virtual_first_arg = 0;
 	if( toker->next()!=')' ){
+		if (toker->curr() == EXTENDS) {
+			virtual_first_arg = -1;
+			toker->next();
+		}
 		for(;;){
-			params->push_back( parseVarDecl( DECL_PARAM,false ) );
+			DeclNode* decl = parseVarDecl(DECL_PARAM, false);
+			if (virtual_first_arg == -1) {
+				VarDeclNode* vdecl = dynamic_cast<VarDeclNode*>(decl);
+				if (!vdecl || !isalnum(vdecl->tag[0])) // HACKHACK: nasty way to check for struct type tag
+					ex("a method can only extend a struct");
+				virtual_first_arg = 1; // do not check further args
+			}
+			params->push_back( decl );
 			if( toker->curr()!=',' ) break;
 			toker->next();
 		}
@@ -520,7 +532,7 @@ DeclNode *Parser::parseFuncDecl(){
 	if (toker->curr() != ENDFUNCTION && toker->curr() != END) exp("'End Function' or 'End'");
 	StmtNode *ret=d_new ReturnNode(0);ret->pos=toker->pos();
 	stmts->push_back( ret );toker->next();
-	DeclNode *d=d_new FuncDeclNode( ident,tag,params.release(),stmts.release() );
+	DeclNode *d=d_new FuncDeclNode( ident,tag,params.release(),stmts.release(),virtual_first_arg );
 	d->pos=pos;d->file=incfile;
 	return d;
 }

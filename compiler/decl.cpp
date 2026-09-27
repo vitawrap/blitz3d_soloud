@@ -33,3 +33,17 @@ Decl *DeclSeq::insertDecl( const string &s,Type *t,int kind,ConstType *d ){
 	return decls.back();
 }
 
+bool DeclSeq::insertDecl(Decl* d) {
+	if( findDecl( d->name ) ) return false;
+	decls.push_back( d );
+	return true;
+}
+
+void DeclSeq::removeDecl(Decl* d) {
+	vector<Decl*>::iterator it;
+	for( it=decls.begin();it!=decls.end();++it ){
+		if( (*it) == d ) {
+			decls.erase(it); return;
+		}
+	}
+}

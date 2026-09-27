@@ -438,6 +438,13 @@ BBObj *_bbObjFromHandle( int handle,BBObjType *type ){
 	return obj; // permissive: perform no type check
 }
 
+void* _bbObjResolveVirtualSym( BBObj *obj, int offs ){
+	if ( !obj ){ RTEX( "Null object pointer for method" ); return 0; }
+	offs >>=2;
+	BBObjVirt* vtable = obj->type->virt;
+	return offs < vtable->virtualCnt ? vtable->virtuals[offs] : 0;
+}
+
 void _bbNullObjEx(){
 	RTEX( "Object does not exist" );
 }
@@ -579,6 +586,7 @@ void basic_link( void (*rtSym)( const char *sym,void *pc ) ){
 	rtSym( "_bbObjToStr",_bbObjToStr );
 	rtSym( "_bbObjToHandle",_bbObjToHandle );
 	rtSym( "_bbObjFromHandle",_bbObjFromHandle );
+	rtSym( "_bbObjResolveVirtualSym", _bbObjResolveVirtualSym);
 	rtSym( "_bbNullObjEx",_bbNullObjEx );
 	rtSym( "_bbRestore",_bbRestore );
 	rtSym( "_bbReadInt",_bbReadInt );

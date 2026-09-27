@@ -33,7 +33,13 @@ struct BBType{
 	BBType( int n ):type(n){}
 };
 
+struct BBObjVirt {
+	int virtualCnt;
+	void* virtuals[0];
+};
+
 struct BBObjType : public BBType{
+	BBObjVirt* virt;
 	BBObj used,free;
 	int fieldCnt;
 	BBType *fieldTypes[1];
@@ -129,6 +135,7 @@ int		 _bbObjCompare( BBObj *o1,BBObj *o2 );
 BBStr *	 _bbObjToStr( BBObj *obj );
 int		 _bbObjToHandle( BBObj *obj );
 BBObj *	 _bbObjFromHandle( int handle,BBObjType *type );
+void *	 _bbObjResolveVirtualSym( BBObj *obj, int offs );
 void	 _bbNullObjEx();
 
 void	 _bbRestore( BBData *data );
