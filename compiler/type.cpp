@@ -47,6 +47,7 @@ int StructType::countFields() const {
 }
 
 void StructType::getStructTypeChain(list<StructType*>& out) {
+	out.clear();
 	for (auto* walk = this; walk; walk = walk->base)
 		out.push_front(walk);
 }
