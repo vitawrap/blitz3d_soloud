@@ -244,6 +244,28 @@ content="text/html; charset=iso-8859-1">
     define a method for A, an override for B and pass in an instance of C for said method,
     the override for B will be called as it is "closer" in the chain than A's method.
   </p>
+  <p>If you want to navigate the chain of overrides from a method, there is a handy
+    keyword you can use: <b>Super</b>. If you call "Super" from a method (and only a
+    method,) you can execute the immediately preceding overrider, going closer to
+    the base type. Infact, we can rewrite our two "VectorScale" declarations as such:
+  </p>
+  <blockquote>
+    <p><i> Function VectorScale (Extends this.Vector2, scalar#) <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this\x = this\x * scalar<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this\y = this\y * scalar<br>
+      End Function</i> </p>
+    <p><i> Function VectorScale (Extends this.Vector3, scalar#) <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Super this, scalar<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this\z = this\z * scalar<br>
+      End Function</i> </p>
+  </blockquote>
+  <p>"Super" here will go up to the previous available implementation of "VectorScale"
+    which is for Vector2, which <i>already</i> takes care of scaling x and y. Therefore
+    reducing the complexity of VectorScale for Vector3 with an identical result. Do note
+    that if your method return a value, you can also write Super(...) with parameters
+    just like a custom function, which allows you to use it in variable assignments
+    and complex expressions.
+  </p>
   <p>Be warned that methods and functions cannot share names, if you create a group of
     methods called VectorScale, this identifier is now unavailable to new functions.
     Don't worry too much about this as the compiler will thoroughly warn you when this
