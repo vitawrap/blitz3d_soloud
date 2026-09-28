@@ -296,6 +296,9 @@ void StructDeclNode::buildvirt( Environ *e ){
 			}
 			virt->offset= base_virts + (k * 4);
 		}
+
+		// sort decls after calculating offsets to make sure it's correct for any subsequent operations
+		sem_type->virtuals->sortDecls();
 	} else {
 		// no parent class so we're free to just generate a root table
 		for (int k=0; sem_type->virtuals && k < sem_type->virtuals->size();++k) {
