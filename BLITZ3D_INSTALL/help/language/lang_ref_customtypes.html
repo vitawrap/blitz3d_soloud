@@ -184,6 +184,72 @@ content="text/html; charset=iso-8859-1">
   <blockquote>
     <p> <i>Delete Each MyType </i></p>
   </blockquote>
+  <hr>
+  <p>Types now also support <b>extension</b>, which means a type that extends another will
+    automatically have the fields of the type it extends. </p>
+  <blockquote>
+    <p><i> Type Vector2 <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Field x#,y# <br>
+      End Type</i> </p>
+    <p><i> Type Vector3 Extends Vector2 <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Field z# <br>
+      End Type</i> </p>
+  </blockquote>
+  <p>The Vector3 type only defines the field "z" because it extends from Vector2 which
+    already provides the x and y fields. There are no requirements on fields needed to
+    allow extension. Types can still be empty, and can freely extend empty types. <br>
+    Type extension also means variables <i>(global, local, fields)</i> can be declared with
+    a type <i>(like Vector2 here)</i> and will automatically support objects from a
+    type that is an extension <i>(like Vector3 here)</i>. Type variables however still do
+    not support object instances from a type that is completely out of the hierarchy it targets.
+    Your Vector3 variable will not be able to receive an instance of a "Car" which supposedly
+    extends "Vehicle" for example.
+  </p>
+  <p>Another new feature empowering the type system of the language is
+    <b>methods</b>.
+  </p>
+  <p>Methods are <b>functions</b> and they behave exactly the same, however, they get
+    tied to the extension system in interesting ways. Have a look at those two methods:
+  </p>
+  <blockquote>
+    <p><i> Function VectorScale (Extends this.Vector2, scalar#) <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this\x = this\x * scalar<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this\y = this\y * scalar<br>
+      End Function</i> </p>
+    <p><i> Function VectorScale (Extends this.Vector3, scalar#) <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this\x = this\x * scalar<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this\y = this\y * scalar<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this\z = this\z * scalar<br>
+      End Function</i> </p>
+  </blockquote>
+  <p>Notice another usage of the <b>Extends</b> keyword. Annotating the first parameter of
+    a function with Extends tells the compiler to turn it into a method, tied to the
+    specific custom type of that parameter. This, of course, only works with custom types.
+  </p>
+  <p>Calling methods is done identically to calling functions:
+  </p>
+  <blockquote>
+    <p><i> Local vel.Vector3 = New Vector3 <br>
+        vel\x = 25.0 <br>
+        vel\x = 24.0 <br>
+        vel\x = 0.1 <br>
+        VectorScale(vel)</i> </p>
+  </blockquote>
+  <p>The difference with normal functions however is that when a method is called, it will
+    automatically call the one that was defined for the specific object type passed as the
+    first parameter. This type could be different from the type of the variable holding it
+    as long as it is an extension. <br>
+    If a method was not defined for a specific extended type, it will use the override
+    that is closest to the object's type. Basically if you have types A, B, and C: If you
+    define a method for A, an override for B and pass in an instance of C for said method,
+    the override for B will be called as it is "closer" in the chain than A's method.
+  </p>
+  <p>Be warned that methods and functions cannot share names, if you create a group of
+    methods called VectorScale, this identifier is now unavailable to new functions.
+    Don't worry too much about this as the compiler will thoroughly warn you when this
+    case is met, which will hopefully reduce confusing uses of intertwined methods and
+    functions.
+  </p>
 </blockquote>
 </body>
 </html>
