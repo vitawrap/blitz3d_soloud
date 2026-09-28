@@ -45,7 +45,8 @@ struct CallNode : public ExprNode{
 	string ident,tag;
 	ExprSeqNode *exprs;
 	Decl *sem_decl;
-	CallNode( const string &i,const string &t,ExprSeqNode *e ):ident(i),tag(t),exprs(e){}
+	StructType* vtype;
+	CallNode( const string &i,const string &t,ExprSeqNode *e ):ident(i),tag(t),exprs(e),vtype(0){}
 	~CallNode(){ delete exprs; }
 	ExprNode *semant( Environ *e );
 	TNode *translate( Codegen *g );

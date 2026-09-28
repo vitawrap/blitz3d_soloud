@@ -147,10 +147,27 @@ void ExprSeqNode::castTo( Type *t,Environ *e ){
 ///////////////////
 ExprNode *CallNode::semant( Environ *e ){
 	Type *t=e->findType( tag );
-	sem_decl=e->findFunc( ident );
-	if( !sem_decl || !(sem_decl->kind & DECL_FUNC) ) ex( "Function '"+ident+"' not found" );
-	FuncType *f=sem_decl->type->funcType();
-	if( t && f->returnType!=t ) ex( "incorrect function return type" );
+	FuncType *f = 0;
+	// check if this is a parent call
+	if (tolower(ident) == "super") {
+		if (e->sem_func && e->sem_func->vfunc) {
+			ident = e->sem_func_ident;
+			f = e->sem_func;
+			if ( t && f->returnType!=t ) ex( "incorrect method return type" );
+			vtype = f->params->decls[0]->type->structType();
+			Decl* virtual_decl = vtype->findVirtualParent(ident);
+			if (!virtual_decl) ex("no parent method to call from super");
+			sem_decl = virtual_decl;
+			f = virtual_decl->type->funcType();
+		} else {
+			ex("super call not used within method");
+		}
+	} else {
+		sem_decl=e->findFunc( ident );
+		if( !sem_decl || !(sem_decl->kind & DECL_FUNC) ) ex( "Function '"+ident+"' not found" );
+		f = sem_decl->type->funcType();
+		if( t && f->returnType!=t ) ex( "incorrect function return type" );
+	}
 	exprs->semant( e );
 	exprs->castTo( f->params,e,f->cfunc );
 	sem_type=f->returnType;
@@ -163,7 +180,14 @@ TNode *CallNode::translate( Codegen *g ){
 
 	TNode *t;
 	TNode *l=0;
-	if (f->vfunc) {
+	if (vtype) {
+		StructType* par_type = f->params->decls[0]->type->structType();
+		// silly way to do "call [vtable_addr + offset]" (deref fptr at addr + offs and call)
+		l = d_new TNode(IR_MEM, d_new TNode(IR_ADD, 
+			d_new TNode(IR_GLOBAL,0,0,"_v_t" + par_type->ident),
+			d_new TNode(IR_CONST,0,0,sem_decl->offset+4))); // skip table virt count
+	}
+	else if (f->vfunc) {
 		Decl* struct_arg = f->params->decls[0];
 		StructType* struct_type = struct_arg->type->structType();
 		Decl* virtual_decl = struct_type->findVirtual(ident);

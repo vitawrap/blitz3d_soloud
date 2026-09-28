@@ -147,6 +147,7 @@ void Parser::parseStmtSeq( StmtSeqNode *stmts,int scope ){
 				incfile=t_inc;
 			}
 			break;
+		case SUPER: // TODO: Better handling of this case
 		case IDENT:
 			{
 				string ident=toker->text();
@@ -807,6 +808,7 @@ ExprNode *Parser::parsePrimary( bool opt ){
 	case BBFALSE:
 		result=d_new IntConstNode( 0 );
 		toker->next();break;
+	case SUPER: // todo: again
 	case IDENT:
 		ident=toker->text();
 		toker->next();tag=parseTypeTag();

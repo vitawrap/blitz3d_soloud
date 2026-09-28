@@ -74,6 +74,15 @@ Decl* StructType::findVirtual(const string& ident) {
 	return ret;
 }
 
+Decl* StructType::findVirtualParent(const string& ident) {
+	if (!virtuals) return 0;
+	for (auto* walk = this->base; walk; walk = walk->base) {
+		Decl* ret = walk->virtuals? walk->virtuals->findDecl(ident) : 0;
+		if (ret) return ret;
+	}
+	return 0;
+}
+
 bool StructType::isTypeInChain(Type* type) const {
 	for (auto* walk = this; walk; walk = walk->base) {
 		if (walk == type) return true;

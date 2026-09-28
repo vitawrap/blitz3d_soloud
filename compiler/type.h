@@ -61,6 +61,7 @@ struct StructType : public Type{
 	int countVirtuals() const;
 	Decl* findField(const string& ident);
 	Decl* findVirtual(const string& ident);
+	Decl* findVirtualParent(const string& ident);
 	void getStructTypeChain(list<StructType*>&);
 	bool isTypeInChain(Type* type) const;
 };

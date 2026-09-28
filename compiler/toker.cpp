@@ -36,6 +36,7 @@ static void makeKeywords() {
 	alphaTokes["Extends"] = EXTENDS;
 	alphaTokes["End Type"] = ENDTYPE;
 	alphaTokes["Each"] = EACH;
+	alphaTokes["Super"] = SUPER;
 	alphaTokes["Local"] = LOCAL;
 	alphaTokes["Global"] = GLOBAL;
 	alphaTokes["Field"] = FIELD;
