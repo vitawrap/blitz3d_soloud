@@ -3,6 +3,8 @@
 #include "decl.h"
 #include "type.h"
 
+#include <algorithm>
+
 Decl::~Decl(){
 }
 
@@ -46,4 +48,10 @@ void DeclSeq::removeDecl(Decl* d) {
 			decls.erase(it); return;
 		}
 	}
+}
+
+void DeclSeq::sortDecls() {
+	std::sort(decls.begin(), decls.end(), [](Decl * const& a, Decl * const& b){
+		return a->offset < b->offset;
+	});
 }

@@ -29,6 +29,7 @@ struct DeclSeq{
 	Decl *insertDecl( const string &s,Type *t,int kind,ConstType *d=0 );
 	bool insertDecl(Decl* d);
 	void removeDecl(Decl* d);
+	void sortDecls(); // sort decls by offset
 	int size(){ return decls.size(); }
 };
 
