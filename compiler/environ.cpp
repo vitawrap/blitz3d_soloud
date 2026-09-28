@@ -3,7 +3,7 @@
 #include "environ.h"
 
 Environ::Environ( const string &f,Type *r,int l,Environ *gs )
-:funcLabel(f),returnType(r),level(l),globals(gs){
+:funcLabel(f),returnType(r),level(l),globals(gs),sem_func(0){
 	decls=d_new DeclSeq();
 	typeDecls=d_new DeclSeq();
 	funcDecls=d_new DeclSeq();

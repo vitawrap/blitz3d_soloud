@@ -20,6 +20,8 @@ public:
 	DeclSeq *typeDecls;
 
 	vector<Type*> types;
+	FuncType* sem_func;
+	string sem_func_ident;
 
 	vector<Label*> labels;
 	Environ *globals;
