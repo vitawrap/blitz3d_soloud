@@ -270,7 +270,12 @@ void StructDeclNode::buildvirt( Environ *e ){
 			if (!proto_virt)
 				sem_type->virtuals->insertDecl(test_ident+INHERIT_TAG, base_virt->type, base_virt->kind);
 			else {
-				// if the new/override decl exists, reinsert it at the end to keep order of offsets...
+				// if this is a new/override, perform sanity check on declaration
+				if (proto_virt->type->funcType()->returnType != base_virt->type->funcType()->returnType)
+					ex("Return type of method '"+ proto_virt->name +
+						"' does not match implementation for parent type '"+ sem_base->ident +"'.");
+
+				// keep it at the end before recalculating offsets
 				sem_type->virtuals->removeDecl(proto_virt);
 				sem_type->virtuals->insertDecl(proto_virt);
 			}
