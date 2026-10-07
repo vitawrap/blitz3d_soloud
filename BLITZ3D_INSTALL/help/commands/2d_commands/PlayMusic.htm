@@ -17,11 +17,21 @@ filename$ - name of music file. Formats supported:  raw/mod/s3m/xm/it/mid/rmi/wa
 <table>
 <tr>
 <td>
-This command will load and play a music file.<br />
-<br />
-You MUST use a channel variable  in order to stop or adjust the music playing. You may use StopChannel, PauseChannel, ResumeChannel, etc. with this command.<br />
-<br />
+This command will load and play a music file.
+
+<br />
+
+<br />
+You MUST use a channel variable  in order to stop or adjust the music playing. You may use StopChannel, PauseChannel, ResumeChannel, etc. with this command.
+
+<br />
+
+<br />
 You can't 'preload' the audio like you can a sound sample via the LoadSound command. Every time you call the PlayMusic  command, the file is reloaded and played. This means that if you use the command  while some graphics are moving on-screen, you may get a slight pause when the  hard drive seeks and grabs the music file. To avoid this, you might want to  use the PlaySound/LoopSound  commands instead.
+
+<br />
+<br />
+Note that with a Soloud build of the engine, module and midi playback is not available out of the box. Soloud instead checks if an existing x86 libopenmpt dll exists alongside the executable and will load it to play those types of music files. The libopenmpt library is not included as it is distributed with a different license (BSD-3-Clause at the time of writing) than Blitz3D, as well as requiring additional files when shipping a standalone executable.
 </td>
 </tr>
 </table>
@@ -29,8 +39,10 @@ You can't 'preload' the audio like you can a sound sample via the LoadSound comm
 <table>
 <tr>
 <td>
-; Load and play the background music<br />
-<br />
+; Load and play the background music
+<br />
+
+<br />
 chnBackground=PlayMusic("music\background.wav")
 </td>
 </tr>

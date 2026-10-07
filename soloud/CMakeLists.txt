@@ -44,6 +44,8 @@ set(SRCS
         ${ASRC}/wav/soloud_wavstream.cpp
         ${ASRC}/wav/stb_vorbis.c
         ${ASRC}/wav/dr_impl.cpp
+        ${ASRC}/openmpt/soloud_openmpt.cpp
+        ${ASRC}/openmpt/soloud_openmpt_dll.c
 )
 
 set(SRCS ${SRCS}

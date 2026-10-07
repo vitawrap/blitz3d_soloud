@@ -3,6 +3,7 @@
 #include "soloud.h"
 #include "soloud_wav.h"
 #include "soloud_wavstream.h"
+#include "soloud_openmpt.h"
 
 SoLoud::Soloud *soloud;
 
@@ -18,6 +19,7 @@ namespace {
 	}
 
 	SoLoud::WavStream musicStream;
+	SoLoud::Openmpt musicMPTStream;
 	uint32_t musicChannel;
 
 	float rolloffFactor = 1.0f;
@@ -120,10 +122,16 @@ uint32_t bbPlayMusic(BBStr *path) {
 		soloud->stop(musicChannel);
 		musicChannel = 0;
 	}
+	bool useMPT = false;
 	auto r = musicStream.load(path->c_str());
+	if (r != SoLoud::SO_NO_ERROR) {
+		// try to load from openmpt lib instead
+		r = musicMPTStream.load(path->c_str());
+		useMPT = true;
+	}
 	delete path;
 	if (r != SoLoud::SO_NO_ERROR) return 0;
-	return musicChannel = soloud->play(musicStream);
+	return musicChannel = soloud->play(useMPT? (SoLoud::AudioSource&)musicMPTStream : musicStream);
 }
 
 void bbStopChannel(uint32_t channel) {
