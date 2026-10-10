@@ -95,7 +95,12 @@ bool VectorType::canCastTo( Type *t ){
 	if( VectorType *v=t->vectorType() ){
 		if( elementType!=v->elementType ) return false;
 		if( sizes.size()!=v->sizes.size() ) return false;
-		for( int k=0;k<sizes.size();++k ){
+		if ( sizes.size() == 1 ) {
+			// special case for single dimension vectors,
+			// allow casting to a smaller vector (for params, etc)
+			return sizes[0] >= v->sizes[0];
+		}
+		else for( int k=0;k<sizes.size();++k ){
 			if( sizes[k]!=v->sizes[k] ) return false;
 		}
 		return true;
